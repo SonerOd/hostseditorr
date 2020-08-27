@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello World!</title>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <style>
+        table {
+            margin-top: 10px;
+        }
+        .form-control {
+            height: 28px;
+            border-radius: 5px;
+        }
+        .lineBtn {
+            height: 28px;
+            padding-top: 0;
+        }
+        #form {
+            overflow: hidden;
+            display: block;
+            width: 100%;
+            position: relative;
+            top: 10px;
+        }
+        .toolbarBtn {
+            margin-right: 15px;
+        }
+    </style>
+    <script>let $ = require('jquery');</script>
+    <script>require('popper.js');</script>
+    <script>require('bootstrap');</script>
+</head>
+<body style="-webkit-app-region: drag;background-color:#343a40; padding-top:25px;">
+
+<button type="button" class="btn btn-success float-right toolbarBtn" onclick="addNewRow();">&plus;</button>
+<button type="button" class="btn btn-warning float-right toolbarBtn" onclick="saveAllRows();"><img src="https://cdn2.iconfinder.com/data/icons/font-awesome/1792/save-512.png" style="max-width:15px;"></button>
+    <form id="form">
+        <table class="table table-dark">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">IP</th>
+                <th scope="col">Domain</th>
+                <th scope="col">Action</th>
+            </tr>
+            </thead>
+            <tbody id="rows">
+            </tbody>
+        </table>
+    </form>
+    <script>
+        const electron = require('electron');
+        const { ipcRenderer } = electron;
+        ipcRenderer.on('key:getRows', (event,rows) => {
+            $.each(rows, function(x,y){
+                $('#rows').append('\n' +
+                    '<tr>\n' +
+                    '    <td>'+(x+1)+'</td>\n' +
+                    '    <td><input class="form-control" required name="ip" value="'+y[0]+'"></td>\n' +
+                    '    <td><input class="form-control" required name="domain" value="'+y[1]+'"></td>\n' +
+                    '    <td><button type="button" class="btn btn-danger lineBtn" onClick="removeMe(this);">&times;</button></td>\n' +
+                    '</tr>')
+            });
+        });
+        ipcRenderer.on('key:UpdateSuccess', (event,data)=>{
+            if(data){
+                alert('Güncelleme Başarıyla gerçekleştirildi!');
+            }
+        });
+        function removeMe(e){
+            $(e).parent().parent().remove();
+        }
+        function addNewRow(){
+            let lengthOfRows = $('#rows').find('tr').length;
+            $('#rows').append('\n' +
+                '<tr>\n' +
+                '    <td>'+(lengthOfRows+1)+'</td>\n' +
+                '    <td><input class="form-control" required name="ip" value=""></td>\n' +
+                '    <td><input class="form-control" required name="domain" value=""></td>\n' +
+                '    <td><button type="button" class="btn btn-danger lineBtn" onClick="removeMe(this);">&times;</button></td>\n' +
+                '</tr>')
+        }
+        function saveAllRows(){
+            var paramObj = {};
+            $.each($('#form').serializeArray(), function(_, kv) {
+                if (paramObj.hasOwnProperty(kv.name)) {
+                    paramObj[kv.name] = $.makeArray(paramObj[kv.name]);
+                    paramObj[kv.name].push(kv.value);
+                }
+                else {
+                    paramObj[kv.name] = kv.value;
+                }
+            });
+            ipcRenderer.send('key:saveRows', paramObj);
+        }
+    </script>
+</body>
+</html>
